@@ -27,7 +27,7 @@ router.post('/signup', (req, res) => {
             });
             user.save()
             .then((user) => {
-                res.json({message: "Saved successfully"});
+                res.json({message: "Saved successfully!"});
             })
             .catch((err) => {
                 console.log(err);
@@ -53,11 +53,9 @@ router.post('/signin',(req, res) => {
         bcrypt.compare(password, savedUser.password)
         .then((doMatch) => {
             if(doMatch){
-                // res.json({message: "Successfully signed in!"});
-
                 const token = jwt.sign({_id: savedUser._id}, JWT_KEY);
-
-                res.json({token: token})     
+                const {_id, name, email} = savedUser;
+                res.json({token: token, user: {_id, name, email}})     
             }
             else{
                 return res.status(422).json({error: "Invalid credentials!"});
