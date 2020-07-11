@@ -7,6 +7,7 @@ const Post = mongoose.model('Post');
 router.get('/allposts',requireLogin, (req, res)=> {
     Post.find()
     .populate('postedBy', "_id name")
+    .populate("comments.postedBy", "_id name")
     .then((posts) => {
         res.json({posts: posts});
     })
@@ -39,6 +40,7 @@ router.post('/createpost', requireLogin , (req, res) => {
 router.get('/myposts', requireLogin, (req, res) => {
     Post.find({postedBy: req.user._id})
     .populate("postedBy", "_id name")
+    .populate("comments.postedBy", "_id name")
     .then((myposts) => {
         res.json({myposts});
     })
@@ -75,6 +77,61 @@ router.put('/unlike', requireLogin, (req, res) => {
         }
     })
 });
+router.put('/comment', requireLogin, (req, res) => {
+    const comment = {
+        text: req.body.text,
+        postedBy: req.user._id
+    };
+    Post.findByIdAndUpdate(req.body.postId, {
+        $push: {comments:comment}
+    }, {
+        new: true
+    })
+    .populate("comments.postedBy", "_id name")
+    .populate("postedBy", "_id name")
+    .exec((err, result) => {
+        if(err){
+            return res.status(422).json({error: err});
+        }
+        else{
+            res.json(result);
+        }
+    })
+});
 
-
+router.delete('/deletepost/:postId',requireLogin, (req, res)=>{
+    Post.findOne({_id:req.params.postId})
+    .populate("postedBy", "_id name")
+    .populate("comments.postedBy", "_id name")
+    .exec((err, post)=>{
+        if(err || !post){
+            return res.status(422).json({error:err});
+        }
+        if(post.postedBy._id.toString() === req.user._id.toString()){
+            post.remove()
+            .then((result)=> {
+                res.json(result);
+            }).catch(err=>{
+                res.json({error:err});
+            })            
+        }
+    })
+});
+router.delete('/deletecomment/:postId/comments/:commentId', requireLogin, (req, res) => {
+    Post.findOne({_id:req.params.postId})
+    .populate("postedBy", "_id name")
+    .populate("comments.postedBy", "_id name")
+    .exec((err, post)=>{
+        if(err || !post){
+            return res.status(422).json({error:err});
+        }
+        post.comments.id(req.params.commentId).remove();
+        post.save()
+        .then(resp=>{
+            res.json(resp);
+        }).catch(err=>{
+            res.json({error:err});
+        })
+    });
+})
 module.exports = router;
