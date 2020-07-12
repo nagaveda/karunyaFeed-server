@@ -14,6 +14,17 @@ router.get('/allposts',requireLogin, (req, res)=> {
     .catch((err) => {
         console.log(err);
     })
+});
+router.get('/getsubposts',requireLogin, (req, res)=> {
+    Post.find({postedBy:{$in:req.user.following}})
+    .populate('postedBy', "_id name")
+    .populate("comments.postedBy", "_id name")
+    .then((posts) => {
+        res.json({posts: posts});
+    })
+    .catch((err) => {
+        console.log(err);
+    })
 })
 
 
