@@ -10,7 +10,7 @@ module.exports = (req, res, next) => {
     const token = authorization.replace("Bearer ","");
     jwt.verify(token,JWT_KEY, (err, payload) => {
         if(err){
-            console.log('Done bro!');
+            console.log("Error in authentication!")
             return res.status(401).json({error: "You must be logged in !"});
         }
         const {_id} = payload;
