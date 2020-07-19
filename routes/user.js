@@ -62,4 +62,67 @@ router.put('/unfollow',requireLogin, (req, res)=>{
     })
 
 });
+
+router.put('/updatepic', requireLogin, (req, res) => {
+    User.findByIdAndUpdate(req.user._id, {
+        $set: {pic:req.body.pic}
+    },{new: true}, (err, result)=>{
+        if(err){
+            return res.status(422).json({error:"Pic couldn't be posted!"});
+        }
+        res.json(result);
+    });
+});
+router.put('/updateuser', requireLogin, (req, res) => {
+    
+    if(req.user.email === req.body.email){
+        User.findByIdAndUpdate(req.user._id, {
+            $set:{
+                name:req.body.name,
+                email:req.body.email
+            }
+        },{new:true}, (err, result) => {
+            if(err){
+                return res.status(422).json({error:"Details couldn't be updated !"});
+            }
+            res.json({result:result});
+        });
+    }
+    else{
+        User.findOne({"email":req.body.email})
+        .then((user)=>{
+            if(user){
+                return res.status(422).json({"error":"Email already exists!"});
+            }
+            User.findByIdAndUpdate(req.user._id, {
+                $set:{
+                    name:req.body.name,
+                    email:req.body.email
+                }
+            },{new:true}, (err, result) => {
+                if(err){
+                    return res.status(422).json({error:"Details couldn't be updated !"});
+                }
+                res.json({result:result});
+            });
+            
+        })
+    }
+    
+});
+router.delete('/deleteuser', requireLogin, (req, res) => {
+    User.findByIdAndDelete(req.user._id, (err, result)=>{
+        if(err){
+            return res.json({error:err});
+        }
+        Post.deleteMany({postedBy:req.user._id},(err, data)=>{
+            if(err){
+                return res.json({error:err});
+            }
+            res.json(data);
+        })
+        
+    });
+    
+});
 module.exports = router;
